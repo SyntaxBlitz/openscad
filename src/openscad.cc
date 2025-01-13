@@ -693,9 +693,19 @@ bool flagConvert(const std::string& str){
   return false;
 }
 
+extern "C" {
+  int main2();
+}
+
+int stored_argc;
+char **stored_argv;
+
 // OpenSCAD
-int main(int argc, char **argv)
+int main2()
 {
+  int argc = stored_argc;
+  char **argv = stored_argv;
+
 #if defined(ENABLE_CGAL) && defined(USE_MIMALLOC)
   // call init_mimalloc before any GMP variables are initialized. (defined in src/openscad_mimalloc.h)
   init_mimalloc();
@@ -1036,7 +1046,22 @@ int main(int argc, char **argv)
     return 1;
   }
 
-  Builtins::instance(true);
+  // shh this isn't the real main() function! don't yeet anything yet!
+  // Builtins::instance(true);
 
   return rc;
+}
+
+
+// tja added this so we can rerun main() without busting cache
+int main(int argc, char **argv)
+{
+  stored_argc = argc;
+  stored_argv = new char*[argc];
+  for (int i = 0; i < argc; i++) {
+    stored_argv[i] = new char[strlen(argv[i]) + 1];
+    strcpy(stored_argv[i], argv[i]);
+  }
+
+  return main2();
 }

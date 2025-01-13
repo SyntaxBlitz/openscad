@@ -71,6 +71,7 @@ src/*.debug
 /Testing
 .DS_Store
 /build
+/build-web
 /build_xcode
 /release
 tests/DartConfiguration.tcl

@@ -156,11 +156,11 @@ if (CMAKE_SYSTEM_NAME STREQUAL Emscripten)
   target_compile_options(OpenSCAD PRIVATE -fexceptions)
   target_link_options(OpenSCAD PUBLIC
     -fexceptions
-    -sABORT_ON_WASM_EXCEPTIONS
     -sALLOW_MEMORY_GROWTH=1
     -sDISABLE_EXCEPTION_CATCHING=0
     -sEXIT_RUNTIME=1
-    -sEXPORTED_RUNTIME_METHODS=['ENV','ERRNO_CODES','FS','PATH','callMain']
+    -sEXPORTED_RUNTIME_METHODS=['ENV','ERRNO_CODES','FS','PATH','callMain','ccall']
+    -sEXPORTED_FUNCTIONS=['_main','_main2']
     -sMAXIMUM_MEMORY=4GB
     
     # -g produces DWARF debug info, which is quite large and may need debugger extensions.
