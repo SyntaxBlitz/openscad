@@ -74,6 +74,7 @@ Containers &containers() {
     add_item(*containers, {FileFormat::BINARY_STL, "binstl", "stl", "STL (binary)"});
     add_item(*containers, {FileFormat::OBJ, "obj", "obj", "OBJ"});
     add_item(*containers, {FileFormat::OFF, "off", "off", "OFF"});
+    add_item(*containers, {FileFormat::OFF2, "off2", "off2", "OFF2"});
     add_item(*containers, {FileFormat::WRL, "wrl", "wrl", "VRML"});
     add_item(*containers, {FileFormat::AMF, "amf", "amf", "AMF"});
     add_item(*containers, {FileFormat::_3MF, "3mf", "3mf", "3MF"});
@@ -164,6 +165,7 @@ return format == FileFormat::ASCII_STL ||
   format == FileFormat::BINARY_STL ||
   format == FileFormat::OBJ ||
   format == FileFormat::OFF ||
+  format == FileFormat::OFF2 ||
   format == FileFormat::WRL ||
   format == FileFormat::AMF ||
   format == FileFormat::_3MF ||
@@ -216,6 +218,9 @@ void exportFile(const std::shared_ptr<const Geometry>& root_geom, std::ostream& 
     break;
   case FileFormat::OFF:
     export_off(root_geom, output);
+    break;
+  case FileFormat::OFF2:
+    export_off2(root_geom, output);
     break;
   case FileFormat::WRL:
     export_wrl(root_geom, output);

@@ -29,6 +29,7 @@ enum class FileFormat {
   BINARY_STL,
   OBJ,
   OFF,
+  OFF2,
   WRL,
   AMF,
   _3MF,
@@ -201,6 +202,7 @@ void export_stl(const std::shared_ptr<const Geometry>& geom, std::ostream& outpu
 void export_3mf(const std::shared_ptr<const Geometry>& geom, std::ostream& output, const ExportInfo& exportInfo);
 void export_obj(const std::shared_ptr<const Geometry>& geom, std::ostream& output);
 void export_off(const std::shared_ptr<const Geometry>& geom, std::ostream& output);
+void export_off2(const std::shared_ptr<const Geometry>& geom, std::ostream& output);
 void export_wrl(const std::shared_ptr<const Geometry>& geom, std::ostream& output);
 void export_amf(const std::shared_ptr<const Geometry>& geom, std::ostream& output);
 void export_dxf(const std::shared_ptr<const Geometry>& geom, std::ostream& output);

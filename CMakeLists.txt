@@ -870,6 +870,7 @@ set(CORE_SOURCES
   src/io/export_dxf.cc
   src/io/export_obj.cc
   src/io/export_off.cc
+  src/io/export_off2.cc
   src/io/export_param.cc
   src/io/export_pdf.cc
   src/io/export_stl.cc

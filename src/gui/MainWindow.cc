@@ -487,6 +487,7 @@ MainWindow::MainWindow(const QStringList& filenames)
   export_map[FileFormat::_3MF] = this->fileActionExport3MF;
   export_map[FileFormat::OBJ] =  this->fileActionExportOBJ;
   export_map[FileFormat::OFF] =  this->fileActionExportOFF;
+  export_map[FileFormat::OFF2] = this->fileActionExportOFF2;
   export_map[FileFormat::WRL] =  this->fileActionExportWRL;
   export_map[FileFormat::POV] =  this->fileActionExportPOV;
   export_map[FileFormat::AMF] =  this->fileActionExportAMF;
