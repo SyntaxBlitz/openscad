@@ -42,6 +42,8 @@ namespace CGALUtils {
 
 std::unique_ptr<CGAL_Nef_polyhedron> createNefPolyhedronFromPolySet(const PolySet& ps)
 {
+  std::cerr << "createNefPolyhedronFromPolySet" << std::endl;
+
   if (ps.isEmpty()) return std::make_unique<CGAL_Nef_polyhedron>();
   assert(ps.getDimension() == 3);
 

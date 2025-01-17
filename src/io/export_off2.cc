@@ -46,6 +46,7 @@ uint8_t clamp_color_channel_2(float value)
 
 void export_off2(const std::shared_ptr<const Geometry>& geom, ExportedHeapData* output)
 {
+  std::cerr << "21312323" << std::endl;
   auto ps = PolySetUtils::getGeometryAsPolySet(geom);
   if (!ps->isTriangular()) {
     ps = PolySetUtils::tessellate_faces(*ps);
@@ -70,7 +71,7 @@ void export_off2(const std::shared_ptr<const Geometry>& geom, ExportedHeapData* 
     vertices_flat[i * 3 + 2] = v[i][2];
   }
 
-  float* indexed_triangles_flat = new float[ps->indices.size() * 3];
+  int* indexed_triangles_flat = new int[ps->indices.size() * 3];
 
   for (size_t i = 0; i < ps->indices.size(); ++i) {
     // int nverts = ps->indices[i].size();

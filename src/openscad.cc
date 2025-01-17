@@ -149,7 +149,7 @@ bool checkAndExport(const std::shared_ptr<const Geometry>& root_geom, unsigned d
     LOG("Current top level object is empty.");
     return false;
   }
-
+std::cerr << "345345" << std::endl;
   exportFile(root_geom, output, exportInfo);
 
   // if (is_stdout) {
@@ -490,6 +490,7 @@ int do_export(
     GeometryEvaluator geomevaluator(tree);
     std::unique_ptr<OffscreenView> glview;
     std::shared_ptr<const Geometry> root_geom;
+    std::cerr << "hi" << std::endl;
     if ((export_format == FileFormat::ECHO || export_format == FileFormat::PNG) && (cmd.viewOptions.renderer == RenderType::OPENCSG || cmd.viewOptions.renderer == RenderType::THROWNTOGETHER)) {
       // OpenCSG or throwntogether png -> just render a preview
       glview = prepare_preview(tree, cmd.viewOptions, camera);
@@ -500,6 +501,7 @@ int do_export(
 
       constexpr bool allownef = true;
       root_geom = geomevaluator.evaluateGeometry(*tree.root(), allownef);
+      std::cerr << "has rg" << root_geom << std::endl;
       if (!root_geom) root_geom = std::make_shared<PolySet>(3);
       if (cmd.viewOptions.renderer == RenderType::BACKEND_SPECIFIC && root_geom->getDimension() == 3) {
         if (auto geomlist = std::dynamic_pointer_cast<const GeometryList>(root_geom)) {
@@ -519,6 +521,7 @@ int do_export(
 
     const std::string input_filename = cmd.is_stdin ? "<stdin>" : cmd.filename;
     const int dim = fileformat::is3D(export_format) ? 3 : fileformat::is2D(export_format) ? 2 : 0;
+    std::cerr << "234" << std::endl;
     ExportInfo exportInfo = createExportInfo(export_format, fileformat::info(export_format), input_filename, &cmd.camera, cmd.exportOptions);
     if (dim > 0 && !checkAndExport(root_geom, dim, exportInfo, output)) {
       return 1;
@@ -559,7 +562,6 @@ int cmdline(const CommandLine& cmd, ExportedHeapData* output)
     if (!fileformat::fromIdentifier(suffix, export_format)) {
       LOG("Invalid suffix %1$s. Either add a valid suffix or specify one using the --export-format option.", suffix);
       std::cout << "Supported formats: " << std::endl;
-                output->num_vertices = 666;
 
       return 1;
     }
@@ -573,7 +575,6 @@ int cmdline(const CommandLine& cmd, ExportedHeapData* output)
   }
   if (!fs::is_directory(output_dir)) {
     LOG("\n'%1$s' is not a directory for output file %2$s - Skipping\n", output_dir.generic_string(), cmd.output_file);
-              output->num_vertices = 777;
 
     return 1;
   }
@@ -592,7 +593,6 @@ int cmdline(const CommandLine& cmd, ExportedHeapData* output)
     std::ifstream ifs(cmd.filename);
     if (!ifs.is_open()) {
       LOG("Can't open input file '%1$s'!\n", cmd.filename);
-                output->num_vertices = 888;
 
       return 1;
     }
@@ -625,7 +625,6 @@ int cmdline(const CommandLine& cmd, ExportedHeapData* output)
   }
   if (!root_file) {
     LOG("Can't parse file '%1$s'!\n", cmd.filename);
-              output->num_vertices = 999;
 
     return 1;
   }
@@ -655,12 +654,10 @@ int cmdline(const CommandLine& cmd, ExportedHeapData* output)
     .camera = cmd.camera,
   };
 
-          output->num_vertices = 789;
 
 
   if (cmd.animate.frames == 0) {
     render_variables.time = 0;
-    output->num_vertices = 120;
     return do_export(cmd, render_variables, export_format, root_file, output);
   } else {
     assert(false && "Animation not implemented");
@@ -749,7 +746,6 @@ char** stored_argv;
 // OpenSCAD
 int run_main(ExportedHeapData* output)
 {
-  output->num_vertices = 69;
 
   int argc = stored_argc;
   char** argv = stored_argv;
@@ -1018,7 +1014,6 @@ int run_main(ExportedHeapData* output)
       std::string rv = fileformat::info(FileFormat::OFF).identifier;
       retval = new char[rv.size() + 1];
       strcpy(retval, rv.c_str());
-      output->num_vertices = 349;
       return 1;
     }
   }
@@ -1083,6 +1078,8 @@ int run_main(ExportedHeapData* output)
       rc = 1;
     }
 
+    rc = 0; // idk trying to find the issue
+
     if (deps_output_file) {
       std::string deps_out(deps_output_file);
       const std::vector<std::string>& geom_out(output_files);
@@ -1126,7 +1123,6 @@ extern "C" {
 ExportedHeapData* alloc_export_struct() {
   ExportedHeapData* data = new ExportedHeapData();
 
-  data->num_vertices = 42;
   // std::cout << "Allocated ExportedHeapData struct" << std::endl;
 
   return data;
@@ -1136,4 +1132,9 @@ char* get_return_string() {
   return retval;
 }
 
+}
+
+void set_retval(std::string s) {
+  retval = new char[s.size() + 1];
+  strcpy(retval, s.c_str());
 }

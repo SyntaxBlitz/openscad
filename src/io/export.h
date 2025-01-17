@@ -195,7 +195,7 @@ struct ExportInfo {
 struct ExportedHeapData {
   float* vertices_flat;
   size_t num_vertices;
-  float* indexed_triangles_flat;
+  int* indexed_triangles_flat;
   size_t num_triangles;
 };
 

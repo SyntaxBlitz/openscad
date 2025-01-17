@@ -69,6 +69,7 @@ std::shared_ptr<const Geometry> GeometryEvaluator::evaluateGeometry(const Abstra
 {
   auto result = smartCacheGet(node, allownef);
   if (!result) {
+    std::cerr << "no$gba" << std::endl;
     // If not found in any caches, we need to evaluate the geometry
     // traverse() will set this->root to a geometry, which can be any geometry
     // (including GeometryList if the lazyunions feature is enabled)

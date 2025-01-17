@@ -33,6 +33,7 @@
 #include "export.h"
 #include "geometry/Geometry.h"
 #include "glview/RenderSettings.h"
+#include "openscad.h"
 
 #include <algorithm>
 #include <functional>
@@ -96,6 +97,13 @@ Containers &containers() {
     containers->identifierToInfo["stl"] = containers->identifierToInfo["asciistl"];  
     return containers;
   }();
+
+  if (!containers) {
+    set_retval("Failed to initialize file format containers");
+  } else {
+    set_retval("nice");
+  }
+
   return *containers;
 }
 
@@ -209,6 +217,7 @@ void exportFile(const std::shared_ptr<const Geometry>& root_geom, ExportedHeapDa
 {
   switch (exportInfo.format) {
   case FileFormat::OFF2:
+  std::cerr << "889787" << std::endl;
     export_off2(root_geom, output);
     break;
   default:

@@ -152,6 +152,8 @@ std::shared_ptr<ManifoldGeometry> createManifoldFromTriangularPolySet(const Poly
 
 std::shared_ptr<ManifoldGeometry> createManifoldFromPolySet(const PolySet& ps)
 {
+  std::cerr << "createManifoldFromPolySet" << std::endl;
+
   // 1. If the PolySet is already manifold, we should be able to build a Manifold object directly
   // (through using manifold::Mesh).
   // We need to make sure our PolySet is triangulated before doing that.
