@@ -44,40 +44,52 @@ uint8_t clamp_color_channel_2(float value)
   return (uint8_t)(value * 255);
 }
 
-void export_off2(const std::shared_ptr<const Geometry>& geom, std::ostream& output)
+void export_off2(const std::shared_ptr<const Geometry>& geom, ExportedHeapData* output)
 {
   auto ps = PolySetUtils::getGeometryAsPolySet(geom);
+  if (!ps->isTriangular()) {
+    ps = PolySetUtils::tessellate_faces(*ps);
+  }
   if (Feature::ExperimentalPredictibleOutput.is_enabled()) {
     ps = createSortedPolySet(*ps);
   }
   const auto& v = ps->vertices;
   size_t numverts = v.size();
 
+  float* vertices_flat = new float[numverts * 3];
 
-  output << "OFF " << numverts << " " << ps->indices.size() << " 0\n";
-  for (size_t i = 0; i < numverts; ++i) {
-    output << v[i][0] << " " << v[i][1] << " " << v[i][2] << " " << "\n";
-  }
-
-  auto has_color = !ps->color_indices.empty();
+  // output << "OFF " << numverts << " " << ps->indices.size() << " 0\n";
   
-  for (size_t i = 0; i < ps->indices.size(); ++i) {
-    int nverts = ps->indices[i].size();
-    output << nverts;
-    for (size_t n = 0; n < nverts; ++n) output << " " << ps->indices[i][n];
-    if (has_color) {
-      auto color_index = ps->color_indices[i];
-      if (color_index >= 0) {
-        auto color = ps->colors[color_index];
-        auto r = clamp_color_channel_2(color[0]);
-        auto g = clamp_color_channel_2(color[1]);
-        auto b = clamp_color_channel_2(color[2]);
-        auto a = clamp_color_channel_2(color[3]);
-        output << " " << (int)r << " " << (int)g << " " << (int)b;
-        // Alpha channel is read by apps like MeshLab.
-        if (a != 255) output << " " << (int)a;
-      }
-    }
-    output << "\n";
+  // for (size_t i = 0; i < numverts; ++i) {
+  //   output << v[i][0] << " " << v[i][1] << " " << v[i][2] << " " << "\n";
+  // }
+
+  for (size_t i = 0; i < numverts; ++i) {
+    vertices_flat[i * 3] = v[i][0];
+    vertices_flat[i * 3 + 1] = v[i][1];
+    vertices_flat[i * 3 + 2] = v[i][2];
   }
+
+  float* indexed_triangles_flat = new float[ps->indices.size() * 3];
+
+  for (size_t i = 0; i < ps->indices.size(); ++i) {
+    // int nverts = ps->indices[i].size();
+    // assert (nverts == 3);
+
+    indexed_triangles_flat[i * 3] = ps->indices[i][0];
+    indexed_triangles_flat[i * 3 + 1] = ps->indices[i][1];
+    indexed_triangles_flat[i * 3 + 2] = ps->indices[i][2];
+
+    // could re-add color to export! e.g. from OFF
+  }
+
+  // ExportedHeapData* data = new ExportedHeapData{vertices_flat, numverts, indexed_triangles_flat, ps->indices.size()};
+
+  // return data;
+
+  output->vertices_flat = vertices_flat;
+  output->num_vertices = numverts;
+  output->indexed_triangles_flat = indexed_triangles_flat;
+  output->num_triangles = ps->indices.size();
+  
 }

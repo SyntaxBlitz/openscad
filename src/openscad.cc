@@ -90,6 +90,8 @@ std::string commandline_commands;
 static bool arg_info = false;
 std::string arg_colorscheme;
 
+char* retval = nullptr;
+
 class Echostream
 {
 public:
@@ -137,7 +139,7 @@ bool useGUI()
 #endif // OPENSCAD_NOGUI
 
 bool checkAndExport(const std::shared_ptr<const Geometry>& root_geom, unsigned dimensions,
-                    ExportInfo& exportInfo, const bool is_stdout, const std::string& filename)
+                    ExportInfo& exportInfo, ExportedHeapData* output)
 {
   if (root_geom->getDimension() != dimensions) {
     LOG("Current top level object is not a %1$dD object.", dimensions);
@@ -148,12 +150,14 @@ bool checkAndExport(const std::shared_ptr<const Geometry>& root_geom, unsigned d
     return false;
   }
 
-  if (is_stdout) {
-    exportFileStdOut(root_geom, exportInfo);
-  }
-  else {
-    exportFileByName(root_geom, filename, exportInfo);
-  }
+  exportFile(root_geom, output, exportInfo);
+
+  // if (is_stdout) {
+  //   exportFileStdOut(root_geom, exportInfo);
+  // }
+  // else {
+  //   exportFileByName(root_geom, filename, exportInfo);
+  // }
   return true;
 }
 
@@ -390,7 +394,13 @@ Camera get_camera(const po::variables_map& vm)
   return camera;
 }
 
-int do_export(const CommandLine& cmd, const RenderVariables& render_variables, FileFormat export_format, SourceFile *root_file)
+int do_export(
+  const CommandLine& cmd,
+  const RenderVariables& render_variables,
+  FileFormat export_format,
+  SourceFile *root_file,
+  ExportedHeapData* output
+)
 {
   auto filename_str = fs::path(cmd.output_file).generic_string();
   // Avoid possibility of fs::absolute throwing when passed an empty path
@@ -510,7 +520,7 @@ int do_export(const CommandLine& cmd, const RenderVariables& render_variables, F
     const std::string input_filename = cmd.is_stdin ? "<stdin>" : cmd.filename;
     const int dim = fileformat::is3D(export_format) ? 3 : fileformat::is2D(export_format) ? 2 : 0;
     ExportInfo exportInfo = createExportInfo(export_format, fileformat::info(export_format), input_filename, &cmd.camera, cmd.exportOptions);
-    if (dim > 0 && !checkAndExport(root_geom, dim, exportInfo, cmd.is_stdout, filename_str)) {
+    if (dim > 0 && !checkAndExport(root_geom, dim, exportInfo, output)) {
       return 1;
     }
 
@@ -533,7 +543,7 @@ int do_export(const CommandLine& cmd, const RenderVariables& render_variables, F
   return 0;
 }
 
-int cmdline(const CommandLine& cmd)
+int cmdline(const CommandLine& cmd, ExportedHeapData* output)
 {
   FileFormat export_format;
 
@@ -548,6 +558,9 @@ int cmdline(const CommandLine& cmd)
 
     if (!fileformat::fromIdentifier(suffix, export_format)) {
       LOG("Invalid suffix %1$s. Either add a valid suffix or specify one using the --export-format option.", suffix);
+      std::cout << "Supported formats: " << std::endl;
+                output->num_vertices = 666;
+
       return 1;
     }
   }
@@ -560,6 +573,8 @@ int cmdline(const CommandLine& cmd)
   }
   if (!fs::is_directory(output_dir)) {
     LOG("\n'%1$s' is not a directory for output file %2$s - Skipping\n", output_dir.generic_string(), cmd.output_file);
+              output->num_vertices = 777;
+
     return 1;
   }
 
@@ -577,6 +592,8 @@ int cmdline(const CommandLine& cmd)
     std::ifstream ifs(cmd.filename);
     if (!ifs.is_open()) {
       LOG("Can't open input file '%1$s'!\n", cmd.filename);
+                output->num_vertices = 888;
+
       return 1;
     }
     handle_dep(cmd.filename);
@@ -608,6 +625,8 @@ int cmdline(const CommandLine& cmd)
   }
   if (!root_file) {
     LOG("Can't parse file '%1$s'!\n", cmd.filename);
+              output->num_vertices = 999;
+
     return 1;
   }
 
@@ -636,38 +655,15 @@ int cmdline(const CommandLine& cmd)
     .camera = cmd.camera,
   };
 
+          output->num_vertices = 789;
+
+
   if (cmd.animate.frames == 0) {
     render_variables.time = 0;
-    return do_export(cmd, render_variables, export_format, root_file);
+    output->num_vertices = 120;
+    return do_export(cmd, render_variables, export_format, root_file, output);
   } else {
-    // export the requested number of animated frames
-    const unsigned start_frame = ((cmd.animate.shard - 1) * cmd.animate.frames)
-      / cmd.animate.num_shards;
-    const unsigned limit_frame = (cmd.animate.shard * cmd.animate.frames)
-      / cmd.animate.num_shards;
-    for (unsigned frame = start_frame; frame < limit_frame; ++frame) {
-      render_variables.time = frame * (1.0 / cmd.animate.frames);
-
-      std::ostringstream oss;
-      oss << std::setw(5) << std::setfill('0') << frame;
-
-      auto frame_file = fs::path(cmd.output_file);
-      auto extension = frame_file.extension();
-      frame_file.replace_extension();
-      frame_file += oss.str();
-      frame_file.replace_extension(extension);
-      std::string frame_str = frame_file.generic_string();
-
-      LOG("Exporting %1$s...", cmd.filename);
-
-      CommandLine frame_cmd = cmd;
-      frame_cmd.output_file = frame_str;
-
-      int r = do_export(frame_cmd, render_variables, export_format, root_file);
-      if (r != 0) {
-        return r;
-      }
-    }
+    assert(false && "Animation not implemented");
 
     return 0;
   }
@@ -743,9 +739,21 @@ CmdLineExportOptions convert_export_options(const po::variables_map& vm)
   return map;
 }
 
+extern "C" {
+  int run_main(ExportedHeapData* output);
+}
+
+int stored_argc;
+char** stored_argv;
+
 // OpenSCAD
-int main(int argc, char **argv)
+int run_main(ExportedHeapData* output)
 {
+  output->num_vertices = 69;
+
+  int argc = stored_argc;
+  char** argv = stored_argv;
+
 #if defined(ENABLE_CGAL) && defined(USE_MIMALLOC)
   // call init_mimalloc before any GMP variables are initialized. (defined in src/openscad_mimalloc.h)
   init_mimalloc();
@@ -1006,6 +1014,11 @@ int main(int argc, char **argv)
 
     } else {
       LOG("Unknown --export-format option '%1$s'.  Use -h to list available options.", format_str);
+      // std::string rv = format_str;
+      std::string rv = fileformat::info(FileFormat::OFF).identifier;
+      retval = new char[rv.size() + 1];
+      strcpy(retval, rv.c_str());
+      output->num_vertices = 349;
       return 1;
     }
   }
@@ -1063,7 +1076,7 @@ int main(int argc, char **argv)
             vm.count("summary") ? vm["summary"].as<std::vector<std::string>>() : std::vector<std::string>{},
             vm.count("summary-file") ? vm["summary-file"].as<std::string>() : ""
           };
-          rc |= cmdline(cmd);
+          rc |= cmdline(cmd, output);
         }
       }
     } catch (const HardWarningException&) {
@@ -1091,7 +1104,36 @@ int main(int argc, char **argv)
     return 1;
   }
 
-  Builtins::instance(true);
+  // Builtins::instance(true);
 
   return rc;
+}
+
+int main(int argc, char** argv) {
+  stored_argc = argc;
+  stored_argv = new char*[argc];
+  for (int i = 0; i < argc; i++) {
+    stored_argv[i] = new char[strlen(argv[i]) + 1];
+    strcpy(stored_argv[i], argv[i]);
+  }
+
+  return run_main(new ExportedHeapData());
+  // return 0;
+}
+
+extern "C" {
+
+ExportedHeapData* alloc_export_struct() {
+  ExportedHeapData* data = new ExportedHeapData();
+
+  data->num_vertices = 42;
+  // std::cout << "Allocated ExportedHeapData struct" << std::endl;
+
+  return data;
+}
+
+char* get_return_string() {
+  return retval;
+}
+
 }

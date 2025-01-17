@@ -192,17 +192,25 @@ struct ExportInfo {
   std::shared_ptr<const Export3mfOptions> options3mf;
 };
 
+struct ExportedHeapData {
+  float* vertices_flat;
+  size_t num_vertices;
+  float* indexed_triangles_flat;
+  size_t num_triangles;
+};
+
 ExportInfo createExportInfo(const FileFormat& format, const FileFormatInfo& info, const std::string& filepath, const Camera *camera, const CmdLineExportOptions& cmdLineOptions);
 
 bool exportFileByName(const std::shared_ptr<const class Geometry>& root_geom, const std::string& filename, const ExportInfo& exportInfo);
 bool exportFileStdOut(const std::shared_ptr<const class Geometry>& root_geom, const ExportInfo& exportInfo);
+void exportFile(const std::shared_ptr<const class Geometry>& root_geom, ExportedHeapData* output, const ExportInfo& exportInfo);
 
 void export_stl(const std::shared_ptr<const Geometry>& geom, std::ostream& output,
                 bool binary = true);
 void export_3mf(const std::shared_ptr<const Geometry>& geom, std::ostream& output, const ExportInfo& exportInfo);
 void export_obj(const std::shared_ptr<const Geometry>& geom, std::ostream& output);
 void export_off(const std::shared_ptr<const Geometry>& geom, std::ostream& output);
-void export_off2(const std::shared_ptr<const Geometry>& geom, std::ostream& output);
+void export_off2(const std::shared_ptr<const Geometry>& geom, ExportedHeapData* output);
 void export_wrl(const std::shared_ptr<const Geometry>& geom, std::ostream& output);
 void export_amf(const std::shared_ptr<const Geometry>& geom, std::ostream& output);
 void export_dxf(const std::shared_ptr<const Geometry>& geom, std::ostream& output);
