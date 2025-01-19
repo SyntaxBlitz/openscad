@@ -149,7 +149,7 @@ bool checkAndExport(const std::shared_ptr<const Geometry>& root_geom, unsigned d
     LOG("Current top level object is empty.");
     return false;
   }
-std::cerr << "345345" << std::endl;
+
   exportFile(root_geom, output, exportInfo);
 
   // if (is_stdout) {
@@ -490,7 +490,6 @@ int do_export(
     GeometryEvaluator geomevaluator(tree);
     std::unique_ptr<OffscreenView> glview;
     std::shared_ptr<const Geometry> root_geom;
-    std::cerr << "hi" << std::endl;
     if ((export_format == FileFormat::ECHO || export_format == FileFormat::PNG) && (cmd.viewOptions.renderer == RenderType::OPENCSG || cmd.viewOptions.renderer == RenderType::THROWNTOGETHER)) {
       // OpenCSG or throwntogether png -> just render a preview
       glview = prepare_preview(tree, cmd.viewOptions, camera);
@@ -501,7 +500,6 @@ int do_export(
 
       constexpr bool allownef = true;
       root_geom = geomevaluator.evaluateGeometry(*tree.root(), allownef);
-      std::cerr << "has rg" << root_geom << std::endl;
       if (!root_geom) root_geom = std::make_shared<PolySet>(3);
       if (cmd.viewOptions.renderer == RenderType::BACKEND_SPECIFIC && root_geom->getDimension() == 3) {
         if (auto geomlist = std::dynamic_pointer_cast<const GeometryList>(root_geom)) {
@@ -521,7 +519,6 @@ int do_export(
 
     const std::string input_filename = cmd.is_stdin ? "<stdin>" : cmd.filename;
     const int dim = fileformat::is3D(export_format) ? 3 : fileformat::is2D(export_format) ? 2 : 0;
-    std::cerr << "234" << std::endl;
     ExportInfo exportInfo = createExportInfo(export_format, fileformat::info(export_format), input_filename, &cmd.camera, cmd.exportOptions);
     if (dim > 0 && !checkAndExport(root_geom, dim, exportInfo, output)) {
       return 1;
@@ -742,6 +739,7 @@ extern "C" {
 
 int stored_argc;
 char** stored_argv;
+int first_run = 1;
 
 // OpenSCAD
 int run_main(ExportedHeapData* output)
@@ -780,7 +778,10 @@ int run_main(ExportedHeapData* output)
   CGAL::set_error_behaviour(CGAL::THROW_EXCEPTION);
   CGAL::set_warning_behaviour(CGAL::THROW_EXCEPTION);
 #endif
-  Builtins::instance()->initialize();
+
+  if (first_run) {
+    Builtins::instance()->initialize();
+  }
 
   auto original_path = fs::current_path();
 
@@ -1102,6 +1103,7 @@ int run_main(ExportedHeapData* output)
   }
 
   // Builtins::instance(true);
+  first_run = 0;
 
   return rc;
 }

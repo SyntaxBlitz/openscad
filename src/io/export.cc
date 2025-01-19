@@ -98,12 +98,6 @@ Containers &containers() {
     return containers;
   }();
 
-  if (!containers) {
-    set_retval("Failed to initialize file format containers");
-  } else {
-    set_retval("nice");
-  }
-
   return *containers;
 }
 
