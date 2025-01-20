@@ -1231,7 +1231,11 @@ void MainWindow::instantiateRoot()
 
   if (this->root_file) {
     // Evaluate CSG tree
+    auto current_time = std::chrono::system_clock::now();
+    auto current_time_ms = std::chrono::duration_cast<std::chrono::milliseconds>(current_time.time_since_epoch()).count();
+    LOG("Current time: %1$lld ms", current_time_ms);
     LOG("Compiling design (CSG Tree generation)...");
+
     this->processEvents();
 
     AbstractNode::resetIndexCounter();
@@ -1287,6 +1291,9 @@ void MainWindow::compileCSG()
   try{
     assert(this->root_node);
     LOG("Compiling design (CSG Products generation)...");
+    auto current_time = std::chrono::system_clock::now();
+    auto current_time_ms = std::chrono::duration_cast<std::chrono::milliseconds>(current_time.time_since_epoch()).count();
+    LOG("Current time: %1$lld ms", current_time_ms);
     this->processEvents();
 
     // Main CSG evaluation
@@ -1315,6 +1322,9 @@ void MainWindow::compileCSG()
     progress_report_fin();
     updateStatusBar(nullptr);
 
+    current_time = std::chrono::system_clock::now();
+    current_time_ms = std::chrono::duration_cast<std::chrono::milliseconds>(current_time.time_since_epoch()).count();
+    LOG("Current time: %1$lld ms", current_time_ms);
     LOG("Compiling design (CSG Products normalization)...");
     this->processEvents();
 
@@ -1987,6 +1997,9 @@ void MainWindow::prepareCompile(const char *afterCompileSlot, bool procevents, b
   autoReloadTimer->stop();
   setCurrentOutput();
   LOG(" ");
+  auto current_time = std::chrono::system_clock::now();
+  auto current_time_ms = std::chrono::duration_cast<std::chrono::milliseconds>(current_time.time_since_epoch()).count();
+  LOG("Current time: %1$lld ms", current_time_ms);
   LOG("Parsing design (AST generation)...");
   this->processEvents();
   this->afterCompileSlot = afterCompileSlot;
@@ -2146,6 +2159,9 @@ void MainWindow::cgalRender()
   this->cgalRenderer = nullptr;
   this->root_geom.reset();
 
+  auto current_time = std::chrono::system_clock::now();
+  auto current_time_ms = std::chrono::duration_cast<std::chrono::milliseconds>(current_time.time_since_epoch()).count();
+  LOG("Current time: %1$lld ms", current_time_ms);
   LOG("Rendering Polygon Mesh using %1$s...",
       renderBackend3DToString(RenderSettings::inst()->backend3D).c_str());
 
@@ -2174,6 +2190,9 @@ void MainWindow::actionRenderDone(const std::shared_ptr<const Geometry>& root_ge
     }
     renderStatistic.printAll(root_geom, qglview->cam, options);
     LOG("Rendering finished.");
+    auto current_time = std::chrono::system_clock::now();
+    auto current_time_ms = std::chrono::duration_cast<std::chrono::milliseconds>(current_time.time_since_epoch()).count();
+    LOG("Current time: %1$lld ms", current_time_ms);
 
     this->root_geom = root_geom;
     this->cgalRenderer = std::make_shared<CGALRenderer>(root_geom);

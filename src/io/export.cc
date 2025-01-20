@@ -211,7 +211,6 @@ void exportFile(const std::shared_ptr<const Geometry>& root_geom, ExportedHeapDa
 {
   switch (exportInfo.format) {
   case FileFormat::OFF2:
-  std::cerr << "889787" << std::endl;
     export_off2(root_geom, output);
     break;
   default:

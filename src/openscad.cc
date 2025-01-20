@@ -558,8 +558,6 @@ int cmdline(const CommandLine& cmd, ExportedHeapData* output)
 
     if (!fileformat::fromIdentifier(suffix, export_format)) {
       LOG("Invalid suffix %1$s. Either add a valid suffix or specify one using the --export-format option.", suffix);
-      std::cout << "Supported formats: " << std::endl;
-
       return 1;
     }
   }
