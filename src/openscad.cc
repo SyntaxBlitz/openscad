@@ -41,6 +41,10 @@
 #include <fcntl.h>
 #endif
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
+
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/split.hpp>
 #include <boost/bind/bind.hpp>
@@ -394,6 +398,10 @@ Camera get_camera(const po::variables_map& vm)
   return camera;
 }
 
+#ifdef __EMSCRIPTEN__
+EM_JS(void, reportCSGResult, (const char* s), { postMessage({ type: 'csgResult', payload: { csg: UTF8ToString(s) }}); });
+#endif
+
 int do_export(
   const CommandLine& cmd,
   const RenderVariables& render_variables,
@@ -450,6 +458,12 @@ int do_export(
     LOG(message_group::Warning, *nextLocation, builtin_context->documentRoot(), "More than one Root Modifier (!)");
   }
   Tree tree(root_node, fparent.string());
+  // output->csg_export = tree.getString(*root_node, "");
+  // maybe we don't need to throw this in the heap return at all
+  #ifdef __EMSCRIPTEN__
+    std::string csg_export = tree.getString(*root_node, "");
+    reportCSGResult(csg_export.c_str());
+  #endif
 
   if (export_format == FileFormat::CSG) {
     // https://github.com/openscad/openscad/issues/128

@@ -161,7 +161,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL Emscripten)
     -sDISABLE_EXCEPTION_CATCHING=0
     # -sEXIT_RUNTIME=1
     -sEXPORTED_RUNTIME_METHODS=['ENV','ERRNO_CODES','FS','PATH','callMain','ccall','UTF8ToString']
-    -sEXPORTED_FUNCTIONS=['_main','_run_main','_alloc_export_struct','_get_return_string']
+    -sEXPORTED_FUNCTIONS=['_main','_run_main','_alloc_export_struct','_get_return_string','_free']
     -sMAXIMUM_MEMORY=4GB
     
     # -g produces DWARF debug info, which is quite large and may need debugger extensions.

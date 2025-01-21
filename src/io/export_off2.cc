@@ -44,9 +44,10 @@ uint8_t clamp_color_channel_2(float value)
   return (uint8_t)(value * 255);
 }
 
+// (this is a lie -- there's no off2 here -- it's just how i started, by cloning an exporter)
 void export_off2(const std::shared_ptr<const Geometry>& geom, ExportedHeapData* output)
 {
-  std::cerr << "21312323" << std::endl;
+  // std::cerr << "21312323" << std::endl;
   auto ps = PolySetUtils::getGeometryAsPolySet(geom);
   if (!ps->isTriangular()) {
     ps = PolySetUtils::tessellate_faces(*ps);

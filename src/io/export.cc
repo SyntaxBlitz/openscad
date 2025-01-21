@@ -213,6 +213,7 @@ void exportFile(const std::shared_ptr<const Geometry>& root_geom, ExportedHeapDa
   case FileFormat::OFF2:
     export_off2(root_geom, output);
     break;
+  // TODO I really should add the others back in ... i want to be able to use this build with the gui
   default:
     assert(false && "Unknown file format");
   }
