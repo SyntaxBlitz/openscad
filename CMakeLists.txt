@@ -808,6 +808,7 @@ set(CORE_SOURCES
   src/core/ModuleInstantiation.cc
   src/core/NodeDumper.cc
   src/core/NodeVisitor.cc
+  src/core/GizmoDumper.cc
   src/core/OffsetNode.cc
   src/core/Parameters.cc
   src/core/ProjectionNode.cc

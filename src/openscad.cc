@@ -60,6 +60,7 @@
 
 #include "core/Builtins.h"
 #include "core/CSGTreeEvaluator.h"
+#include "core/GizmoDumper.h"
 #include "core/customizer/CommentParser.h"
 #include "core/customizer/ParameterObject.h"
 #include "core/customizer/ParameterSet.h"
@@ -461,7 +462,16 @@ int do_export(
   // output->csg_export = tree.getString(*root_node, "");
   // maybe we don't need to throw this in the heap return at all
   #ifdef __EMSCRIPTEN__
-    std::string csg_export = tree.getString(*root_node, "");
+    auto current_time_ms = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+    auto dumpstream = std::ostringstream();
+    GizmoDumper dumper(dumpstream);
+    dumper.traverse(*root_node);
+    auto end_time_ms = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+
+    LOG("Gizmo dump took %1$d ms", end_time_ms - current_time_ms);
+    // LOG("Gizmo dump: %1$s", dumpstream.str());
+
+    std::string csg_export = dumpstream.str();
     reportCSGResult(csg_export.c_str());
   #endif
 
@@ -628,10 +638,13 @@ int cmdline(const CommandLine& cmd, ExportedHeapData* output)
   text += "\n\x03\n" + commandline_commands;
 
   SourceFile *root_file = nullptr;
+  auto current_time_us = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
   if (!parse(root_file, text, cmd.filename, cmd.filename, false)) {
     delete root_file; // parse failed
     root_file = nullptr;
   }
+  auto end_time_us = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+  LOG("Parsing took %1$d us", end_time_us - current_time_us);
   if (!root_file) {
     LOG("Can't parse file '%1$s'!\n", cmd.filename);
 
