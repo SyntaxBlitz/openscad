@@ -203,7 +203,8 @@ ExportInfo createExportInfo(const FileFormat& format, const FileFormatInfo& info
 
 bool exportFileByName(const std::shared_ptr<const class Geometry>& root_geom, const std::string& filename, const ExportInfo& exportInfo);
 bool exportFileStdOut(const std::shared_ptr<const class Geometry>& root_geom, const ExportInfo& exportInfo);
-void exportFile(const std::shared_ptr<const class Geometry>& root_geom, ExportedHeapData* output, const ExportInfo& exportInfo);
+void exportFile(const std::shared_ptr<const class Geometry>& root_geom, std::ostream& output, const ExportInfo& exportInfo);
+void exportGeometryToHeap(const std::shared_ptr<const class Geometry>& root_geom, ExportedHeapData* output, const ExportInfo& exportInfo);
 
 void export_stl(const std::shared_ptr<const Geometry>& geom, std::ostream& output,
                 bool binary = true);

@@ -144,7 +144,7 @@ bool useGUI()
 #endif // OPENSCAD_NOGUI
 
 bool checkAndExport(const std::shared_ptr<const Geometry>& root_geom, unsigned dimensions,
-                    ExportInfo& exportInfo, ExportedHeapData* output)
+                    ExportInfo& exportInfo, ExportedHeapData* output, const std::string& filename)
 {
   if (root_geom->getDimension() != dimensions) {
     LOG("Current top level object is not a %1$dD object.", dimensions);
@@ -155,7 +155,14 @@ bool checkAndExport(const std::shared_ptr<const Geometry>& root_geom, unsigned d
     return false;
   }
 
-  exportFile(root_geom, output, exportInfo);
+  if (exportInfo.format == FileFormat::OFF2) {
+    exportGeometryToHeap(root_geom, output, exportInfo);
+  } else if (exportInfo.format == FileFormat::ASCII_STL || exportInfo.format == FileFormat::_3MF) {
+    exportFileByName(root_geom, filename, exportInfo);
+  } else {
+    LOG("Unsupported export format.");
+    return false;
+  }
 
   // if (is_stdout) {
   //   exportFileStdOut(root_geom, exportInfo);
@@ -544,7 +551,7 @@ int do_export(
     const std::string input_filename = cmd.is_stdin ? "<stdin>" : cmd.filename;
     const int dim = fileformat::is3D(export_format) ? 3 : fileformat::is2D(export_format) ? 2 : 0;
     ExportInfo exportInfo = createExportInfo(export_format, fileformat::info(export_format), input_filename, &cmd.camera, cmd.exportOptions);
-    if (dim > 0 && !checkAndExport(root_geom, dim, exportInfo, output)) {
+    if (dim > 0 && !checkAndExport(root_geom, dim, exportInfo, output, filename_str)) {
       return 1;
     }
 

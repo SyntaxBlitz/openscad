@@ -207,15 +207,27 @@ ExportInfo createExportInfo(const FileFormat& format, const FileFormatInfo& info
   return exportInfo;
 }
 
-void exportFile(const std::shared_ptr<const Geometry>& root_geom, ExportedHeapData* output, const ExportInfo& exportInfo)
+void exportGeometryToHeap(const std::shared_ptr<const Geometry>& root_geom, ExportedHeapData* output, const ExportInfo& exportInfo)
 {
   switch (exportInfo.format) {
   case FileFormat::OFF2:
     export_off2(root_geom, output);
     break;
-  // TODO I really should add the others back in ... i want to be able to use this build with the gui
   default:
     assert(false && "Unknown file format");
+  }
+}
+
+void exportFile(const std::shared_ptr<const Geometry>& root_geom, std::ostream& output, const ExportInfo& exportInfo) {
+  switch (exportInfo.format) {
+    case FileFormat::ASCII_STL:
+      export_stl(root_geom, output, true);
+      break;
+    case FileFormat::_3MF:
+      export_3mf(root_geom, output, exportInfo);
+      break;
+    default:
+      assert(false && "Unknown file format");
   }
 }
 
@@ -231,8 +243,33 @@ bool exportFileStdOut(const std::shared_ptr<const Geometry>& root_geom, const Ex
 
 bool exportFileByName(const std::shared_ptr<const Geometry>& root_geom, const std::string& filename, const ExportInfo& exportInfo)
 {
-  assert(false && "Not implemented");
-  return true;
+  std::ios::openmode mode = std::ios::out | std::ios::trunc;
+  if (exportInfo.format == FileFormat::_3MF || exportInfo.format == FileFormat::BINARY_STL || exportInfo.format == FileFormat::PDF) {
+    mode |= std::ios::binary;
+  }
+  const std::filesystem::path path(filename);
+  std::ofstream fstream(path, mode);
+  if (!fstream.is_open()) {
+    LOG(_("Can't open file \"%1$s\" for export"), filename);
+    return false;
+  } else {
+    bool onerror = false;
+    fstream.exceptions(std::ios::badbit | std::ios::failbit);
+    try {
+      exportFile(root_geom, fstream, exportInfo);
+    } catch (std::ios::failure&) {
+      onerror = true;
+    }
+    try { // make sure file closed - resources released
+      fstream.close();
+    } catch (std::ios::failure&) {
+      onerror = true;
+    }
+    if (onerror) {
+      LOG(message_group::Error, _("\"%1$s\" write error. (Disk full?)"), filename);
+    }
+    return !onerror;
+  }
 }
 
 namespace {
