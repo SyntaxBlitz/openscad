@@ -10,26 +10,28 @@
 
 cmake_minimum_required(VERSION 3.13)
 
-if(POLICY CMP0071) # Let AUTOMOC and AUTOUIC process GENERATED files.
-  cmake_policy(SET CMP0071 NEW)
-endif()
-if(POLICY CMP0072) # FindOpenGL prefers GLVND by default when available.
-  cmake_policy(SET CMP0072 NEW)
-endif()
-if(POLICY CMP0079) # `target_link_libraries()` allows use with targets in other directories.
-  cmake_policy(SET CMP0079 NEW)
-endif()
-if(POLICY CMP0082) # Install rules from add_subdirectory() calls are interleaved with those in caller.
+# Let AUTOMOC and AUTOUIC process GENERATED files.
+cmake_policy(SET CMP0071 NEW)
+# FindOpenGL prefers GLVND by default when available.
+cmake_policy(SET CMP0072 NEW)
+#`target_link_libraries()` allows use with targets in other directories.
+cmake_policy(SET CMP0079 NEW)
+# Let parent project set child project options (used to skip python lookup from manifold & force TBB)
+cmake_policy(SET CMP0079 NEW)
+if(POLICY CMP0082) # Since CMake 3.14
+  # Install rules from add_subdirectory() calls are interleaved with those in caller.
   cmake_policy(SET CMP0082 NEW)
 endif()
-if(POLICY CMP0077) # Let parent project set child project options (used to skip python lookup from manifold & force TBB)
-  cmake_policy(SET CMP0079 NEW)
+if(POLICY CMP0167) # Since CMake 3.30
+  # Use upstream's FindBoost.cmake to find Boost libraries.
+  cmake_policy(SET CMP0167 NEW)
 endif()
 
 include("cmake/Modules/openscad_version.cmake")
 
 option(INFO "Display build configuration info at end of cmake config" ON)
 option(ENABLE_TESTS "Run testsuite after building." ON)
+option(ENABLE_GUI_TESTS "Compile a special version of the openscad gui with feature for testing." OFF)
 option(EXPERIMENTAL "Enable Experimental Features" OFF)
 option(USE_MANIFOLD_TRIANGULATOR "Use Manifold's triangulator instead of CGAL's" ON)
 option(USE_BUILTIN_MANIFOLD "Use manifold from submodule" ON)
@@ -218,6 +220,8 @@ endif()
 if (NOT "${SUFFIX}" STREQUAL "")
   set(SUFFIX_WITH_DASH "-${SUFFIX}")
   target_compile_definitions(OpenSCAD PRIVATE OPENSCAD_SUFFIX="${SUFFIX_WITH_DASH}")
+else()
+  set(SUFFIX_WITH_DASH "")
 endif()
 
 if (MXECROSS OR WIN32)
@@ -333,7 +337,7 @@ if (MSVC)
   message(STATUS "Eigen: ${Eigen3_VERSION}")
 
   set(Boost_USE_STATIC_LIBS TRUE)
-  find_package(Boost 1.61 REQUIRED COMPONENTS system regex program_options)
+  find_package(Boost 1.70 REQUIRED COMPONENTS regex program_options)
   message(STATUS "Boost: ${Boost_VERSION}")
   target_include_directories(OpenSCAD SYSTEM PRIVATE ${Boost_INCLUDE_DIRS})
   target_link_libraries(OpenSCAD PRIVATE ${Boost_LIBRARIES})
@@ -381,7 +385,7 @@ else()
   target_compile_definitions(OpenSCAD PRIVATE EIGEN_DONT_ALIGN)
   message(STATUS "Eigen: ${Eigen3_VERSION}")
 
-  find_package(Boost 1.61 REQUIRED COMPONENTS system regex program_options)
+  find_package(Boost 1.70 REQUIRED COMPONENTS regex program_options)
   message(STATUS "Boost: ${Boost_VERSION}")
   target_include_directories(OpenSCAD SYSTEM PRIVATE ${Boost_INCLUDE_DIRS})
   target_link_libraries(OpenSCAD PRIVATE ${Boost_LIBRARIES})
@@ -466,12 +470,13 @@ target_link_libraries(OpenSCAD PRIVATE ${LIBXML2_LIBRARIES})
 
 if(ENABLE_PYTHON)
   find_package(Python REQUIRED COMPONENTS Interpreter Development)
-  find_package(CryptoPP REQUIRED)
-  message(STATUS "Python enabled, using Crypto++ ${PC_CRYPTOPP_VERSION}")
+  find_package(Nettle 3.4 REQUIRED)
+  message(STATUS "Python ${Python_VERSION} enabled, using Nettle ${Nettle_VERSION}")
   target_include_directories(OpenSCAD PRIVATE ${Python_INCLUDE_DIRS})
-  target_include_directories(OpenSCAD PRIVATE ${CRYPTOPP_INCLUDE_DIRS})
   target_link_libraries(OpenSCAD PRIVATE ${Python_LIBRARIES})
-  target_link_libraries(OpenSCAD PRIVATE ${CRYPTOPP_LIBRARIES})
+  target_include_directories(OpenSCAD PRIVATE ${Nettle_INCLUDE_DIRS})
+  target_link_libraries(OpenSCAD PRIVATE ${Nettle_LIBRARIES})
+  add_custom_target(OpenSCADPython ALL COMMAND ${CMAKE_COMMAND} -E create_symlink openscad${SUFFIX_WITH_DASH} "openscad-python")
 endif()
 
 if(ENABLE_HIDAPI)
@@ -561,24 +566,6 @@ target_include_directories(OpenSCAD PRIVATE
   "src/ext"
   "src/ext/lexertl/include"
   "src/ext/libtess2/Include"
-
-  # All the following should go away, not needed anymore after
-  # PR #5312. Left here for now in case there are on-going PRs that
-  # rely on these. Should be removed soon.
-  "src/core"
-  "src/core/customizer"
-  "src/ext/json"
-  "src/ext"
-  "src/geometry"
-  "src/geometry/cgal"
-  "src/geometry/manifold"
-  "src/glview"
-  "src/glview/preview"
-  "src/glview/cgal"
-  "src/gui"
-  "src/io"
-  "src/platform"
-  "src/utils"
 )
 
 FLEX_TARGET(openscad_lexer src/core/lexer.l ${OPENSCAD_LIB_OUTPUT_DIR}/lexer.cxx DEFINES_FILE ${OPENSCAD_LIB_OUTPUT_DIR}/lexer.hxx COMPILE_FLAGS ${WINCOMPAT})
@@ -617,8 +604,15 @@ if(NOT HEADLESS)
   set_property(TARGET OpenSCAD PROPERTY AUTORCC ON)
   set_property(TARGET OpenSCAD PROPERTY AUTOUIC_OPTIONS --tr q_)
   set_property(TARGET OpenSCAD PROPERTY AUTORCC_OPTIONS --threshold 10 --compress 9)
+
+  if(ENABLE_GUI_TESTS)
+    set(QT_TEST_IF_ANY Test)
+  else()
+    set(QT_TEST_IF_ANY)
+  endif()
+
   if (USE_QT6)
-    find_package(Qt6 COMPONENTS Core Core5Compat Widgets Multimedia OpenGL OpenGLWidgets Concurrent Network Svg REQUIRED QUIET)
+    find_package(Qt6 COMPONENTS Core Core5Compat Widgets Multimedia OpenGL OpenGLWidgets Concurrent Network Svg ${QT_TEST_IF_ANY} REQUIRED QUIET)
     message(STATUS "Qt6: ${Qt6_VERSION}")
 
     if (Qt6_POSITION_INDEPENDENT_CODE)
@@ -643,7 +637,7 @@ if(NOT HEADLESS)
       message(STATUS "DBus input driver disabled per user request.")
     endif()
   else()
-    find_package(Qt5 5.12 COMPONENTS Core Widgets Multimedia OpenGL Concurrent Network Svg REQUIRED QUIET)
+    find_package(Qt5 5.12 COMPONENTS Core Widgets Multimedia OpenGL Concurrent Network Svg ${QT_TEST_IF_ANY} REQUIRED QUIET)
     message(STATUS "Qt5: ${Qt5_VERSION}")
 
     if (Qt5_POSITION_INDEPENDENT_CODE)
@@ -805,6 +799,7 @@ set(CORE_SOURCES
   src/core/ImportNode.cc
   src/core/LinearExtrudeNode.cc
   src/core/LocalScope.cc
+  src/core/node_clone.cc
   src/core/ModuleInstantiation.cc
   src/core/NodeDumper.cc
   src/core/NodeVisitor.cc
@@ -859,6 +854,7 @@ set(CORE_SOURCES
   src/geometry/boolean_utils.cc
   src/geometry/linalg.cc
   src/geometry/linear_extrude.cc
+  src/geometry/rotate_extrude.cc
   src/glview/Camera.cc
   src/glview/ColorMap.cc
   src/glview/OffscreenContextFactory.cc
@@ -921,7 +917,9 @@ set(CORE_SOURCES
   ${BISON_comment_parser_OUTPUTS})
 if(ENABLE_PYTHON)
 	list(APPEND CORE_SOURCES
-		    src/core/pyopenscad.cc )
+		    src/python/pymod.cc
+		    src/python/pyopenscad.cc 
+		    src/python/pyfunctions.cc )
 	target_compile_definitions(OpenSCAD PRIVATE ENABLE_PYTHON)
 endif()
 
@@ -936,18 +934,17 @@ endif()
 set(CGAL_SOURCES
   src/geometry/cgal/cgalutils.cc
   src/geometry/cgal/cgalutils-applyops.cc
+  src/geometry/cgal/cgalutils-applyops-minkowski.cc
   src/geometry/cgal/cgalutils-closed.cc
   src/geometry/cgal/cgalutils-convex.cc
   src/geometry/cgal/cgalutils-kernel.cc
   src/geometry/cgal/cgalutils-mesh.cc
-  src/geometry/cgal/cgalutils-minkowski.cc
-  src/geometry/cgal/cgalutils-nef.cc
   src/geometry/cgal/cgalutils-orient.cc
   src/geometry/cgal/cgalutils-polyhedron.cc
   src/geometry/cgal/cgalutils-project.cc
   src/geometry/cgal/cgalutils-tess.cc
   src/geometry/cgal/cgalutils-triangulate.cc
-  src/geometry/cgal/CGAL_Nef_polyhedron.cc
+  src/geometry/cgal/CGALNefGeometry.cc
   src/geometry/cgal/CGALCache.cc
   src/io/export_nef.cc
   src/io/import_nef.cc
@@ -1045,8 +1042,9 @@ else()
     src/glview/OpenGLContext.cc
     src/glview/fbo.cc
     src/glview/Renderer.cc
+    src/glview/ShaderUtils.cc
     src/glview/system-gl.cc
-    src/glview/VertexArray.cc
+    src/glview/VBOBuilder.cc
     src/glview/VertexState.cc
     src/glview/VBORenderer.cc
     src/glview/GLView.cc
@@ -1054,6 +1052,7 @@ else()
     src/glview/OffscreenView.cc
     src/glview/cgal/CGALRenderer.cc
     src/glview/cgal/CGALRenderUtils.cc
+    src/glview/PolySetRenderer.cc
     src/glview/preview/OpenCSGRenderer.cc
     src/glview/preview/ThrownTogetherRenderer.cc
     src/io/export_png.cc
@@ -1086,9 +1085,12 @@ set(GUI_SOURCES
   src/gui/EventFilter.h
   src/gui/Export3mfDialog.cc
   src/gui/ExportPdfDialog.cc
+  src/gui/ExportSvgDialog.cc
+  src/gui/OctoPrintApiKeyDialog.cc
   src/gui/FontListDialog.cc
   src/gui/FontListTableView.cc
   src/gui/InitConfigurator.cc
+  src/gui/ImportUtils.cc
   src/gui/LaunchingScreen.cc
   src/gui/LibraryInfoDialog.cc
   src/gui/MainWindow.cc
@@ -1104,6 +1106,7 @@ set(GUI_SOURCES
   src/gui/PrintService.cc
   src/gui/ExternalToolInterface.cc
   src/gui/ProgressWidget.cc
+  src/gui/RubberBandManager.cc
   src/gui/QGLView.cc
   src/gui/QGLView2.cc
   src/gui/QSettingsCached.cc
@@ -1113,12 +1116,12 @@ set(GUI_SOURCES
   src/gui/ScintillaEditor.cc
   src/gui/SettingsWriter.cc
   src/gui/TabManager.cc
-  src/gui/TabWidget.cc
   src/gui/UIUtils.cc
   src/gui/WindowManager.cc
   src/gui/IgnoreWheelWhenNotFocused.cc
   src/gui/input/AxisConfigWidget.cc
   src/gui/input/ButtonConfigWidget.cc
+  src/gui/input/MouseConfigWidget.cc
   src/gui/input/InputDriver.cc
   src/gui/input/InputDriverManager.cc
   src/gui/input/InputEventMapper.cc
@@ -1154,10 +1157,13 @@ set(GUI_HEADERS
     src/gui/EventFilter.h
     src/gui/Export3mfDialog.h
     src/gui/ExportPdfDialog.h
+    src/gui/ExportSvgDialog.h
+    src/gui/OctoPrintApiKeyDialog.h
     src/gui/FontList.h
     src/gui/FontListDialog.h
     src/gui/FontListTableView.h
     src/gui/IgnoreWheelWhenNotFocused.h
+    src/gui/ImportUtils.h
     src/gui/InitConfigurator.h
     src/gui/LaunchingScreen.h
     src/gui/LibraryInfoDialog.h
@@ -1172,6 +1178,7 @@ set(GUI_HEADERS
     src/gui/PrintInitDialog.h
     src/gui/PrintService.h
     src/gui/ProgressWidget.h
+    src/gui/RubberBandManager.h
     src/gui/QGLView.h
     src/gui/QSettingsCached.h
     src/gui/QWordSearchField.h
@@ -1180,7 +1187,6 @@ set(GUI_HEADERS
     src/gui/ScintillaEditor.h
     src/gui/SettingsWriter.h
     src/gui/TabManager.h
-    src/gui/TabWidget.h
     src/gui/UIUtils.h
     src/gui/ViewportControl.h
     src/gui/WindowManager.h
@@ -1207,6 +1213,8 @@ set(GUI_UIS
     src/gui/ErrorLog.ui
     src/gui/Export3mfDialog.ui
     src/gui/ExportPdfDialog.ui
+    src/gui/ExportSvgDialog.ui
+    src/gui/OctoPrintApiKeyDialog.ui
     src/gui/FontList.ui
     src/gui/FontListDialog.ui
     src/gui/LaunchingScreen.ui
@@ -1219,6 +1227,7 @@ set(GUI_UIS
     src/gui/ViewportControl.ui
     src/gui/input/AxisConfigWidget.ui
     src/gui/input/ButtonConfigWidget.ui
+    src/gui/input/MouseConfigWidget.ui
     src/gui/parameter/ParameterCheckBox.ui
     src/gui/parameter/ParameterComboBox.ui
     src/gui/parameter/ParameterDescriptionWidget.ui
@@ -1277,6 +1286,7 @@ set_source_files_properties(
 set(RESOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/resources)
 if(HEADLESS)
   target_compile_definitions(OpenSCAD PRIVATE OPENSCAD_NOGUI)
+  set(ENABLE_GUI_TESTS OFF)
 else()
   list(APPEND RESOURCE_FILES
     ${RESOURCE_DIR}/common.qrc
@@ -1286,6 +1296,27 @@ else()
   # GUI_UIS for .ui files to be indexed by Qt Creator despite AUTOUIC usage
   # GUI_HEADERS for .h files to be indexed by Qt Creator despite AUTOUIC usage
   list(APPEND Sources ${GUI_SOURCES} ${GUI_HEADER_ONLY} ${GUI_UIS} ${GUI_HEADERS})
+endif()
+
+if(ENABLE_GUI_TESTS)
+  set(GUITESTS_HEADERS
+    src/guitests/guitests.h
+    src/guitests/TestModuleCache.h
+    src/guitests/TestTabManager.h
+    src/guitests/TestMainWindow.h
+    src/guitests/UXTest.h
+  )
+
+  set(GUITESTS_SOURCES
+    src/guitests/guitests.cc
+    src/guitests/TestModuleCache.cc
+    src/guitests/TestTabManager.cc
+    src/guitests/TestMainWindow.cc
+    src/guitests/UXTest.cc
+  )
+
+  list(APPEND Sources ${GUITESTS_SOURCES} ${GUITESTS_HEADERS})
+  target_compile_definitions(OpenSCAD PRIVATE ENABLE_GUI_TESTS)
 endif()
 
 if (SNAPSHOT)
@@ -1334,6 +1365,11 @@ if(APPLE AND NOT APPLE_UNIX)
   file(COPY ${CMAKE_SOURCE_DIR}/locale DESTINATION ${BUNDLE_RESOURCES_DIR})
   file(COPY ${CMAKE_SOURCE_DIR}/shaders DESTINATION ${BUNDLE_RESOURCES_DIR})
   file(COPY ${CMAKE_SOURCE_DIR}/templates DESTINATION ${BUNDLE_RESOURCES_DIR})
+
+  if(ENABLE_GUI_TESTS)
+    file(COPY ${CMAKE_SOURCE_DIR}/tests/data DESTINATION ${BUNDLE_RESOURCES_DIR}/tests)
+  endif()
+
 elseif(MINGW)
   set_target_properties(OpenSCAD PROPERTIES
     LINK_FLAGS "-Wl,--stack,${STACKSIZE}"
@@ -1351,6 +1387,9 @@ if (USE_QT6)
       ${QT6QSCINTILLA_LIBRARY} ${Qt6DBus_LIBRARIES} ${Qt6Gamepad_LIBRARIES}
     )
   endif()
+  if(ENABLE_GUI_TESTS)
+    target_link_libraries(OpenSCAD PRIVATE Qt6::Test)
+  endif()
   if(MXECROSS)
     target_link_libraries(OpenSCAD PRIVATE Qt6::QSvgPlugin)
   endif()
@@ -1360,6 +1399,9 @@ else()
       Qt5::Core Qt5::Widgets Qt5::Multimedia Qt5::OpenGL Qt5::Concurrent Qt5::Network Qt5::Svg
       ${QT5QSCINTILLA_LIBRARY} ${Qt5DBus_LIBRARIES} ${Qt5Gamepad_LIBRARIES}
     )
+  endif()
+  if(ENABLE_GUI_TESTS)
+    target_link_libraries(OpenSCAD PRIVATE Qt5::Test)
   endif()
   if(MXECROSS)
     target_link_libraries(OpenSCAD PRIVATE Qt5::QSvgPlugin)
@@ -1384,6 +1426,9 @@ endif()
 if(NOT APPLE OR APPLE_UNIX)
   set_target_properties(OpenSCAD PROPERTIES OUTPUT_NAME openscad${SUFFIX_WITH_DASH})
   install(TARGETS OpenSCAD RUNTIME DESTINATION "${OPENSCAD_BINDIR}")
+  if(ENABLE_PYTHON)
+    install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/openscad-python DESTINATION "${OPENSCAD_BINDIR}")
+  endif()
   if(WIN32)
     if(USE_MIMALLOC AND MI_LINK_SHARED)
       if(CMAKE_SIZEOF_VOID_P EQUAL 8)
@@ -1411,6 +1456,11 @@ if(NOT APPLE OR APPLE_UNIX)
   install(DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/locale DESTINATION "${OPENSCAD_INSTALL_RESOURCEDIR}" FILES_MATCHING PATTERN "*/LC_MESSAGES/openscad.mo")
   install(DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/shaders DESTINATION "${OPENSCAD_INSTALL_RESOURCEDIR}")
   install(DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/templates DESTINATION "${OPENSCAD_INSTALL_RESOURCEDIR}" FILES_MATCHING PATTERN "*.json")
+
+  if(ENABLE_GUI_TESTS)
+    install(DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/tests/data/ DESTINATION ${OPENSCAD_INSTALL_RESOURCEDIR}/tests)
+  endif()
+
 else()
   install(TARGETS ${CMAKE_PROJECT_NAME}
       BUNDLE DESTINATION ${CMAKE_INSTALL_BINDIR}

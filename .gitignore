@@ -2,6 +2,8 @@
 .cache/
 .vs/
 .vscode/
+.idea/
+.clangd/
 /*.scad
 **/out*.*
 *.dmg
@@ -17,7 +19,6 @@ objects
 object_script.openscad.Debug
 object_script.openscad.Release
 .gdbinit
-.qmake.stash
 .tags*
 **/#*#
 /.dir-locals.el
@@ -51,7 +52,6 @@ object_script.openscad.Release
 /OpenSCAD.app
 /openscad.appdata.xml
 /openscad.appdata.xml.in2
-/openscad.pro.user
 /openscad
 /openscad-nightly
 /resources/*.rc
@@ -71,7 +71,7 @@ src/*.debug
 /Testing
 .DS_Store
 /build
-/build_xcode
+/build-web
 /release
 tests/DartConfiguration.tcl
 tests/__pycache__/
@@ -84,7 +84,6 @@ resources/CMakeFiles
 resources/Makefile
 resources/cmake_install.cmake
 resources/docs/OpenSCADUserDocs
-/local.pri
 tests/data/python/gen_issue2342.py
 tests/data/python/gen_svg_viewbox_tests.py
 tests/data/scad/2D/features/import_dxf-tests.scad
@@ -96,4 +95,8 @@ tests/data/scad/misc/use-tests.scad
 tests/data/svg/viewbox/viewbox_*.svg
 tests/regression/pdfexporttest/centered.pdf
 tests/regression/pdfexporttest/simple-pdf.pdf
+tests/regression/export-pdf-fill/centered.pdf
+tests/regression/export-pdf-fill/simple-pdf.pdf
+tests/regression/export-pdf/centered.pdf
+tests/regression/export-pdf/simple-pdf.pdf
 scripts/run-clang-tidy-cached
