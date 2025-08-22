@@ -31,6 +31,7 @@ echo "
   RUN apt update && \
       apt install -y ccache && \
       apt clean
+  WORKDIR /src
 " | docker build \
   --platform=linux/amd64 \
   -t openscad-wasm-ccache:local \

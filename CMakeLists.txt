@@ -160,7 +160,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL Emscripten)
     -sALLOW_MEMORY_GROWTH=1
     -sDISABLE_EXCEPTION_CATCHING=0
     # -sEXIT_RUNTIME=1
-    -sEXPORTED_RUNTIME_METHODS=['ENV','ERRNO_CODES','FS','PATH','callMain','ccall','UTF8ToString']
+    -sEXPORTED_RUNTIME_METHODS=['ENV','ERRNO_CODES','FS','PATH','callMain','ccall','UTF8ToString','HEAPU8']
     -sEXPORTED_FUNCTIONS=['_main','_run_main','_alloc_export_struct','_get_return_string','_free']
     -sMAXIMUM_MEMORY=4GB
     
