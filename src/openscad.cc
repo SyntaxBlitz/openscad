@@ -222,7 +222,11 @@ bool checkAndExport(const std::shared_ptr<const Geometry>& root_geom, unsigned d
 
   if (exportInfo.format == FileFormat::OFF2) {
     exportGeometryToHeap(root_geom, output, exportInfo);
-  } else if (exportInfo.format == FileFormat::ASCII_STL || exportInfo.format == FileFormat::_3MF) {
+  } else if (exportInfo.format == FileFormat::ASCII_STL
+              || exportInfo.format == FileFormat::_3MF
+              || exportInfo.format == FileFormat::SVG
+              || exportInfo.format == FileFormat::DXF
+              || exportInfo.format == FileFormat::PDF) {
     exportFileByName(root_geom, filename, exportInfo);
   // } else if (is_stdout) {
   //   exportFileStdOut(root_geom, exportInfo);
